@@ -1,0 +1,71 @@
+# ===== Unity generated (rebuilt automatically when the project opens) =====
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# Build output (build to a folder named Build/Builds, or outside the project)
+/[Bb]uild/
+/[Bb]uilds/
+/[Bb]uild_*/
+*_BurstDebugInformation_DoNotShip/
+*_BackUpThisFolder_ButDontShipItWithYourGame/
+
+# Asset Store tools / Rider plugin
+/[Aa]ssets/AssetStoreTools*
+/[Aa]ssets/Plugins/Editor/JetBrains*
+
+# Addressables build cache
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# ===== IDE files (Unity regenerates .sln/.csproj) =====
+.vs/
+.vscode/
+.idea/
+.consulo/
+ExportedObj/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# ===== Crash / log files =====
+*.log
+sysinfo.txt
+mono_crash.*
+crashlytics-build.properties
+
+# ===== Packaged / platform builds =====
+*.apk
+*.aab
+*.app
+*.unitypackage
+*.unitypackage.meta
+
+# ===== Homework deliverables (submit separately, don't version) =====
+*.zip
+*.mp4
+*.mkv
+*.mov
+
+# ===== OS junk =====
+.DS_Store
+Thumbs.db
+desktop.ini
