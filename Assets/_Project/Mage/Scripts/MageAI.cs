@@ -170,6 +170,21 @@ public class MageAI : MonoBehaviour
         agent.ResetPath();
     }
 
+    public void StopAI()
+    {
+        StopAllCoroutines();
+
+        isCasting = false;
+
+        if (agent != null && agent.isOnNavMesh)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
+
+        enabled = false;
+    }
+
     void FacePlayer()
     {
         if (player == null)
