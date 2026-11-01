@@ -2719,8 +2719,8 @@ MonoBehaviour:
   animator: {fileID: 7732710085032037264}
   hitTrigger: Hit
   deathTrigger: Die
-  audioSource: {fileID: 0}
-  hitSound: {fileID: 0}
+  audioSource: {fileID: 8772776271662711088}
+  hitSound: {fileID: 8300000, guid: f20b66c308c95e540b5ab03f6fb35d5b, type: 3}
   deathSound: {fileID: 0}
   hitEffect: {fileID: 0}
   onDeath:
@@ -2764,5 +2764,10 @@ CapsuleCollider:
 --- !u!95 &7732710085032037264 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 6146629492154507675, guid: df2aa5e23f4d9a94d85aabbfbb3267e3, type: 3}
+  m_PrefabInstance: {fileID: 4475782183921216011}
+  m_PrefabAsset: {fileID: 0}
+--- !u!82 &8772776271662711088 stripped
+AudioSource:
+  m_CorrespondingSourceObject: {fileID: 5161694338992565051, guid: df2aa5e23f4d9a94d85aabbfbb3267e3, type: 3}
   m_PrefabInstance: {fileID: 4475782183921216011}
   m_PrefabAsset: {fileID: 0}
