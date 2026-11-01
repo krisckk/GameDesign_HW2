@@ -27,6 +27,10 @@ public class EnemyAI : MonoBehaviour
     [Range(0f, 2f)]
     public float effectDelay = 0.3f;
 
+    [Header("Damage")]
+    public int attackDamage = 10;
+    private PlayerHealth playerHealth;
+
     private NavMeshAgent agent;
     private bool isAttacking = false;
     private float nextAttackTime = 0f;
@@ -45,13 +49,20 @@ public class EnemyAI : MonoBehaviour
             animator.SetBool("IsAttacking", false);
         }
 
-        // 避免粒子在遊戲開始時自動播放
         if (stabEffect != null)
         {
             stabEffect.Stop(
                 true,
                 ParticleSystemStopBehavior.StopEmittingAndClear
             );
+        }
+
+        if (player != null)
+        {
+            playerHealth = player.GetComponent<PlayerHealth>();
+
+            if (playerHealth == null)
+                playerHealth = player.GetComponentInParent<PlayerHealth>();
         }
     }
 
@@ -161,6 +172,23 @@ public class EnemyAI : MonoBehaviour
             stabEffect.Play();
         }
 
+        if (player != null && playerHealth != null)
+        {
+            Vector3 direction =
+                player.position - transform.position;
+
+            direction.y = 0f;
+
+            float distance = direction.magnitude;
+
+            if (distance <= attackRange)
+            {
+                playerHealth.TakeDamage(attackDamage);
+
+                Debug.Log("Devil attacked Player! Damage: " + attackDamage);
+            }
+        }
+
         while (animator.GetCurrentAnimatorStateInfo(0)
                        .IsName("attack_1") &&
                animator.GetCurrentAnimatorStateInfo(0)
@@ -221,5 +249,21 @@ public class EnemyAI : MonoBehaviour
             transform.position,
             attackRange
         );
+    }
+
+    public void StopAI()
+    {
+        StopAllCoroutines();
+
+        isAttacking = false;
+        enabled = false;
+
+        NavMeshAgent nav = GetComponent<NavMeshAgent>();
+
+        if (nav != null && nav.isOnNavMesh)
+        {
+            nav.isStopped = true;
+            nav.ResetPath();
+        }
     }
 }
