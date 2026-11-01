@@ -21,6 +21,16 @@ public class EnemyAI : MonoBehaviour
     [Header("Attack")]
     public float attackCooldown = 0.5f;
 
+    [Header("Attack Particle Effect")]
+    public ParticleSystem stabEffect;
+
+    [Range(0f, 2f)]
+    public float effectDelay = 0.3f;
+
+    [Header("Damage")]
+    public int attackDamage = 10;
+    private PlayerHealth playerHealth;
+
     private NavMeshAgent agent;
     private bool isAttacking = false;
     private float nextAttackTime = 0f;
@@ -37,6 +47,22 @@ public class EnemyAI : MonoBehaviour
             animator.applyRootMotion = false;
             animator.SetBool("IsFlying", false);
             animator.SetBool("IsAttacking", false);
+        }
+
+        if (stabEffect != null)
+        {
+            stabEffect.Stop(
+                true,
+                ParticleSystemStopBehavior.StopEmittingAndClear
+            );
+        }
+
+        if (player != null)
+        {
+            playerHealth = player.GetComponent<PlayerHealth>();
+
+            if (playerHealth == null)
+                playerHealth = player.GetComponentInParent<PlayerHealth>();
         }
     }
 
@@ -98,13 +124,74 @@ public class EnemyAI : MonoBehaviour
         animator.SetBool("IsFlying", false);
         animator.SetBool("IsAttacking", true);
 
+        float waitTime = 0f;
+
         while (!animator.GetCurrentAnimatorStateInfo(0)
                         .IsName("attack_1"))
         {
+            waitTime += Time.deltaTime;
+
+            if (waitTime > 2f)
+            {
+                Debug.LogWarning(
+                    "EnemyAI: 找不到 attack_1 動畫狀態"
+                );
+
+                animator.SetBool("IsAttacking", false);
+                isAttacking = false;
+                nextAttackTime = Time.time + attackCooldown;
+                yield break;
+            }
+
             yield return null;
         }
 
+        AnimatorStateInfo attackState =
+            animator.GetCurrentAnimatorStateInfo(0);
+
+        float attackDuration =
+            attackState.length / Mathf.Max(
+                0.01f, animator.speed
+            );
+
+        float delay = Mathf.Clamp(
+            effectDelay,
+            0f,
+            attackDuration
+        );
+
+        yield return new WaitForSeconds(delay);
+
+        if (stabEffect != null)
+        {
+            stabEffect.Stop(
+                true,
+                ParticleSystemStopBehavior.StopEmittingAndClear
+            );
+
+            stabEffect.Play();
+        }
+
+        if (player != null && playerHealth != null)
+        {
+            Vector3 direction =
+                player.position - transform.position;
+
+            direction.y = 0f;
+
+            float distance = direction.magnitude;
+
+            if (distance <= attackRange)
+            {
+                playerHealth.TakeDamage(attackDamage);
+
+                Debug.Log("Devil attacked Player! Damage: " + attackDamage);
+            }
+        }
+
         while (animator.GetCurrentAnimatorStateInfo(0)
+                       .IsName("attack_1") &&
+               animator.GetCurrentAnimatorStateInfo(0)
                        .normalizedTime < 1f)
         {
             yield return null;
@@ -128,6 +215,9 @@ public class EnemyAI : MonoBehaviour
 
     void FacePlayer()
     {
+        if (player == null)
+            return;
+
         Vector3 direction =
             player.position - transform.position;
 
@@ -159,5 +249,21 @@ public class EnemyAI : MonoBehaviour
             transform.position,
             attackRange
         );
+    }
+
+    public void StopAI()
+    {
+        StopAllCoroutines();
+
+        isAttacking = false;
+        enabled = false;
+
+        NavMeshAgent nav = GetComponent<NavMeshAgent>();
+
+        if (nav != null && nav.isOnNavMesh)
+        {
+            nav.isStopped = true;
+            nav.ResetPath();
+        }
     }
 }
