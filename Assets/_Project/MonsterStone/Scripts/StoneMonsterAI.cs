@@ -1,179 +1,236 @@
 
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
-using System.Collections;
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class StoneMonsterAI : MonoBehaviour
 {
-    [Header("Target")]
+    [Header("References")]
     public Transform player;
-
-    [Header("Settings")]
-    public float chaseRange = 8f;
-    public float attackRange = 2.3f;
-    public float moveSpeed = 120f;
-    public float attackCooldown = 2.7f;
-
-    [Header("Animation")]
     public Animation monsterAnimation;
-
-    [Header("Attack Sound")]
-    public AudioClip biteSound;
     public AudioSource audioSource;
-    public float biteSoundDelay = 0.3f;
-
-    [Header("Bite Effect")]
+    public AudioClip biteSound;
     public ParticleSystem biteEffect;
 
+    [Header("Detection")]
+    public float detectionRange = 5f;
+    public float attackRange = 1.8f;
+
+    [Header("Movement")]
+    public float moveSpeed = 4f;
+    public float rotationSpeed = 8f;
+
+    [Header("Attack")]
+    public int attackDamage = 10;
+    public float attackCooldown = 1.2f;
+    public float biteDelay = 0.35f;
+
     private NavMeshAgent agent;
-    private bool isAttacking = false;
-    private float lastAttackTime = -Mathf.Infinity;
+    private PlayerHealth playerHealth;
+    private bool isAttacking;
+    private bool isDead;
+    private float nextAttackTime;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
+
         agent.speed = moveSpeed;
         agent.stoppingDistance = attackRange * 0.8f;
+        agent.updateRotation = false;
 
         if (monsterAnimation == null)
-            monsterAnimation =
-                GetComponentInChildren<Animation>();
-
-        if (player == null)
-        {
-            GameObject obj =
-                GameObject.FindGameObjectWithTag("Player");
-
-            if (obj != null)
-                player = obj.transform;
-        }
-
-        PlayAnimation("Anim_Idle");
+            monsterAnimation = GetComponentInChildren<Animation>();
 
         if (audioSource == null)
             audioSource = GetComponent<AudioSource>();
+
+        if (player == null)
+        {
+            GameObject target =
+                GameObject.FindGameObjectWithTag("Player");
+
+            if (target != null)
+                player = target.transform;
+        }
+
+        if (player != null)
+            playerHealth = player.GetComponentInParent<PlayerHealth>();
+
+        if (monsterAnimation != null)
+        {
+            SetLoop("Anim_Idle", WrapMode.Loop);
+            SetLoop("Anim_Run", WrapMode.Loop);
+
+            SetLoop("Anim_Attack", WrapMode.Once);
+            SetLoop("Anim_Damage", WrapMode.Once);
+            SetLoop("Anim_Death", WrapMode.Once);
+
+            PlayAnimation("Anim_Idle");
+        }
+
+        if (biteEffect != null)
+            biteEffect.Stop(true,
+                ParticleSystemStopBehavior.StopEmittingAndClear);
     }
 
     void Update()
     {
-        if (player == null || !agent.isOnNavMesh)
+        if (isDead || player == null || monsterAnimation == null)
             return;
 
-        float distance = Vector3.Distance(
-            transform.position,
-            player.position
-        );
+        if (!agent.isOnNavMesh)
+            return;
 
         if (isAttacking)
+        {
+            FacePlayer();
             return;
+        }
+
+        Vector3 direction = player.position - transform.position;
+        direction.y = 0f;
+
+        float distance = direction.magnitude;
+
+        if (distance > detectionRange)
+        {
+            StopMoving();
+            PlayAnimation("Anim_Idle");
+            return;
+        }
 
         if (distance <= attackRange)
         {
-            agent.isStopped = true;
-            agent.ResetPath();
-
+            StopMoving();
             FacePlayer();
 
-            if (Time.time >= lastAttackTime + attackCooldown)
-                StartCoroutine(Attack());
+            if (Time.time >= nextAttackTime)
+                StartCoroutine(PerformAttack());
             else
                 PlayAnimation("Anim_Idle");
-        }
-        else if (distance <= chaseRange)
-        {
-            agent.isStopped = false;
-            agent.SetDestination(player.position);
 
-            PlayAnimation("Anim_Run");
+            return;
         }
-        else
-        {
-            agent.isStopped = true;
-            agent.ResetPath();
 
-            PlayAnimation("Anim_Idle");
-        }
+        agent.isStopped = false;
+        agent.SetDestination(player.position);
+
+        if (agent.desiredVelocity.sqrMagnitude > 0.01f)
+            RotateTowards(agent.desiredVelocity);
+
+        PlayAnimation("Anim_Run");
     }
 
-    
-    IEnumerator Attack()
+    IEnumerator PerformAttack()
     {
         isAttacking = true;
-        lastAttackTime = Time.time;
 
-        agent.isStopped = true;
-        agent.ResetPath();
-
+        StopMoving();
         FacePlayer();
 
         PlayAnimation("Anim_Attack");
 
-        float duration = 1f;
-
-        if (monsterAnimation != null &&
-            monsterAnimation["Anim_Attack"] != null)
-        {
-            duration = monsterAnimation["Anim_Attack"].length;
-        }
-
-        float delay = Mathf.Clamp(
-            biteSoundDelay, 0f, duration
-        );
+        float duration = GetAnimationDuration("Anim_Attack");
+        float delay = Mathf.Clamp(biteDelay, 0f, duration);
 
         yield return new WaitForSeconds(delay);
 
         if (audioSource != null && biteSound != null)
-        {
-            audioSource.pitch = 1.2f;
             audioSource.PlayOneShot(biteSound);
-        }
 
         if (biteEffect != null)
         {
             biteEffect.Stop(true,
                 ParticleSystemStopBehavior.StopEmittingAndClear);
-
             biteEffect.Play();
+        }
+
+        if (player != null && playerHealth != null)
+        {
+            Vector3 direction = player.position - transform.position;
+            direction.y = 0f;
+
+            if (direction.magnitude <= attackRange)
+                playerHealth.TakeDamage(attackDamage);
         }
 
         yield return new WaitForSeconds(duration - delay);
 
         isAttacking = false;
-    }
-
-
-    void FacePlayer()
-    {
-        Vector3 direction =
-            player.position - transform.position;
-
-        direction.y = 0;
-
-        if (direction.sqrMagnitude > 0.001f)
-        {
-            Quaternion rotation =
-                Quaternion.LookRotation(direction);
-
-            transform.rotation = Quaternion.Slerp(
-                transform.rotation,
-                rotation,
-                Time.deltaTime * 8f
-            );
-        }
+        nextAttackTime = Time.time + attackCooldown;
     }
 
     void PlayAnimation(string animationName)
     {
-        if (monsterAnimation == null)
-            return;
-
-        if (monsterAnimation[animationName] == null)
+        if (monsterAnimation == null ||
+            monsterAnimation[animationName] == null)
             return;
 
         if (!monsterAnimation.IsPlaying(animationName))
+            monsterAnimation.CrossFade(animationName, 0.1f);
+    }
+
+    void SetLoop(string name, WrapMode mode)
+    {
+        if (monsterAnimation[name] != null)
+            monsterAnimation[name].wrapMode = mode;
+    }
+
+    float GetAnimationDuration(string name)
+    {
+        if (monsterAnimation[name] == null)
+            return 1f;
+
+        return monsterAnimation[name].length /
+            Mathf.Max(0.01f, monsterAnimation[name].speed);
+    }
+
+    void StopMoving()
+    {
+        if (!agent.isOnNavMesh)
+            return;
+
+        agent.isStopped = true;
+        agent.ResetPath();
+    }
+
+    void FacePlayer()
+    {
+        if (player == null) return;
+
+        RotateTowards(player.position - transform.position);
+    }
+
+    void RotateTowards(Vector3 direction)
+    {
+        direction.y = 0f;
+
+        if (direction.sqrMagnitude < 0.001f)
+            return;
+
+        Quaternion targetRotation =
+            Quaternion.LookRotation(direction);
+
+        transform.rotation = Quaternion.Slerp(
+            transform.rotation,
+            targetRotation,
+            rotationSpeed * Time.deltaTime
+        );
+    }
+
+    public void StopAI()
+    {
+        isDead = true;
+        StopAllCoroutines();
+
+        if (agent != null && agent.isOnNavMesh)
         {
-            monsterAnimation.CrossFade(animationName, 0.15f);
+            agent.isStopped = true;
+            agent.ResetPath();
         }
+
+        enabled = false;
     }
 }
