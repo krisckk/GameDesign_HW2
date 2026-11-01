@@ -20,6 +20,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     [Header("Events")]
     public UnityEvent onDeath;
+    public UnityEvent onHit;
 
     public bool IsDead { get; private set; }
 
@@ -38,6 +39,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     public void TakeDamage(int amount)
     {
+        onHit?.Invoke();
         if (IsDead || amount <= 0)
             return;
 
