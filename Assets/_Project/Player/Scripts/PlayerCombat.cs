@@ -37,16 +37,45 @@ public class PlayerCombat : MonoBehaviour
         Invoke(nameof(EndAttack), attackDuration);
     }
 
+    
     void DoHit()
     {
+        Debug.Log("Player DoHit triggered!");
+
         if (slashFx) slashFx.Play();
+
+        Collider[] colliders = Physics.OverlapSphere(
+            hitPoint.position,
+            hitRadius,
+            enemyLayers
+        );
+
+        Debug.Log("Colliders detected: " + colliders.Length);
+
         var hit = new HashSet<IDamageable>();
-        foreach (var col in Physics.OverlapSphere(hitPoint.position, hitRadius, enemyLayers))
+
+        foreach (var col in colliders)
         {
+            Debug.Log("Hit Collider: " + col.name);
+
             var target = col.GetComponentInParent<IDamageable>();
-            if (target != null && hit.Add(target)) target.TakeDamage(damage);
+
+            if (target == null)
+            {
+                Debug.LogWarning(
+                    col.name + " has no IDamageable in parents!"
+                );
+                continue;
+            }
+
+            if (hit.Add(target))
+            {
+                Debug.Log("Damage sent to: " + col.name);
+                target.TakeDamage(damage);
+            }
         }
     }
+
 
     void EndAttack() { if (!health.IsDead) controller.canMove = true; }
 
