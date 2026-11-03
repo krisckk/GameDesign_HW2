@@ -75,6 +75,11 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         if (audioSource != null && deathSound != null)
             audioSource.PlayOneShot(deathSound);
 
+        EnemyCountTarget countTarget = GetComponent<EnemyCountTarget>();
+
+        if (countTarget != null)
+            countTarget.MarkDead();
+
         onDeath?.Invoke();
     }
 

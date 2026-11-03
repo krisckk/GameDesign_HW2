@@ -28,5 +28,6 @@ public class PlayerStats : MonoBehaviour
 
     public void ChangeHP(int delta) { currentHP = Mathf.Clamp(currentHP + delta, 0, maxHP); OnChanged?.Invoke(); }
     public void AddScore(int v) { score += v; OnChanged?.Invoke(); }
+    public void Restore(int hp, int savedScore) { currentHP = Mathf.Clamp(hp, 1, maxHP); score = savedScore; OnChanged?.Invoke(); }  // call on Load Game
     public void ResetAll() { currentHP = maxHP; score = 0; OnChanged?.Invoke(); }  // call on New Game / Restart
 }

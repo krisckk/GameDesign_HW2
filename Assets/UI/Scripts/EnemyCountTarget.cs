@@ -1,8 +1,11 @@
 
+using System;
 using UnityEngine;
 
 public class EnemyCountTarget : MonoBehaviour
 {
+    public static event Action AnyDied;
+
     public bool IsAlive { get; private set; } = true;
 
     public void MarkDead()
@@ -11,5 +14,6 @@ public class EnemyCountTarget : MonoBehaviour
 
         IsAlive = false;
         Debug.Log(gameObject.name + " died!");
+        AnyDied?.Invoke();
     }
 }

@@ -1,15 +1,26 @@
 
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class MainMenuUI : MonoBehaviour
 {
+    public Button loadButton;
+
+    void Start()
+    {
+        // 沒有存檔時停用讀取按鈕
+        if (loadButton != null)
+            loadButton.interactable = GameFlowManager.HasSave();
+    }
+
     public void StartGame()
     {
-        Time.timeScale = 1f;
+        GameFlowManager.Instance.StartGame();
+    }
 
-        // 之後在這裡串接第 5 人的新遊戲血量初始化功能
-        SceneManager.LoadScene("Level1");
+    public void LoadGame()
+    {
+        GameFlowManager.Instance.LoadGame();
     }
 
     public void QuitGame()
