@@ -21,6 +21,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (IsDead || Time.time < lastHitTime + invincibleTime) return;
         lastHitTime = Time.time;
         PlayerStats.Instance.ChangeHP(-amount);
+        Debug.Log($"Player took {amount} damage, current HP: {PlayerStats.Instance.currentHP}/{PlayerStats.Instance.maxHP}");
         if (hurtFx) hurtFx.Play();
 
         if (PlayerStats.Instance.currentHP <= 0)
